@@ -10,20 +10,23 @@ import styles from './CreateChatForm.module.css';
 
 export function CreateChatForm({
   api,
-  messenger = 'max',
+  messenger = 'telegram',
   onCreate,
   onClose,
+  getSuccessFocus,
 }: {
   api: GreenApi;
   messenger?: Messenger;
   onCreate: (chat: { id: string; phone: string; name: string }) => void;
   onClose: () => void;
+  getSuccessFocus?: () => HTMLElement | null;
 }) {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
   const pendingRef = useRef(false);
+  const completedRef = useRef(false);
   const profile = getMessengerConfig(messenger);
   useEffect(() => () => controllerRef.current?.abort(), []);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -31,11 +34,7 @@ export function CreateChatForm({
     if (pendingRef.current) return;
     const normalized = normalizePhoneNumber(phone);
     if (!isValidPhoneNumber(phone, messenger)) {
-      setError(
-        messenger === 'max'
-          ? 'Введите номер РФ (+7) или Беларуси (+375) в международном формате.'
-          : 'Введите телефон с кодом страны, например +49 151 12345678.',
-      );
+      setError('Введите номер с кодом страны: от 7 до 15 цифр. Например, +44 7911 123456.');
       return;
     }
     const controller = new AbortController();
@@ -52,6 +51,7 @@ export function CreateChatForm({
         );
         return;
       }
+      completedRef.current = true;
       onCreate({ id: result.chatId, phone: normalized, name: formatPhoneNumber(normalized) });
     } catch (cause: unknown) {
       if (!controller.signal.aborted)
@@ -66,7 +66,11 @@ export function CreateChatForm({
     }
   }
   return (
-    <Modal title="Новый чат" onClose={onClose}>
+    <Modal
+      title="Новый чат"
+      onClose={onClose}
+      getReturnFocus={() => (completedRef.current ? (getSuccessFocus?.() ?? null) : null)}
+    >
       <form className={styles.form} onSubmit={(e) => void submit(e)}>
         <p className={styles.description}>
           Введите номер человека, которому хотите написать в {profile.label}.
@@ -74,7 +78,7 @@ export function CreateChatForm({
         <InputField
           label="Номер телефона"
           type="tel"
-          placeholder="+7 999 123-45-67"
+          placeholder="+44 7911 123456"
           helperText={profile.phoneHint}
           value={phone}
           autoComplete="tel"

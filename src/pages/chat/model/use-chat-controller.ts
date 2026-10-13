@@ -79,6 +79,7 @@ export function useChatController(api: GreenApi) {
     createChat: (chat: { id: string; phone: string; name: string }) =>
       dispatch({ type: 'create', chat }),
     selectChat: (id: string) => dispatch({ type: 'select', id }),
+    closeChat: () => dispatch({ type: 'close' }),
     changeDraft: (chatId: string, text: string) => dispatch({ type: 'draft', chatId, text }),
     send: (chatId: string) => void send(chatId),
     retry: (chatId: string, id: string) => void send(chatId, id),

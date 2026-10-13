@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { getMessengerConfig, MAX_MESSAGE_LENGTH } from './messenger';
+import { getMessengerConfig, TELEGRAM_MESSAGE_LENGTH } from './messenger';
 
-describe('messenger profiles', () => {
-  it('retains MAX defaults for existing callers', () => {
-    expect(getMessengerConfig()).toMatchObject({
-      label: 'MAX',
-      instanceType: 'v3',
-      maxMessageLength: MAX_MESSAGE_LENGTH,
-    });
-    expect(MAX_MESSAGE_LENGTH).toBe(4000);
+describe('Telegram configuration', () => {
+  it('uses Telegram by default for all callers', () => {
+    expect(getMessengerConfig()).toBe(getMessengerConfig('telegram'));
+    expect(TELEGRAM_MESSAGE_LENGTH).toBe(4096);
   });
 
-  it('uses the real Telegram instance type and text limit', () => {
+  it('uses the Telegram instance type, text limit and official links', () => {
     expect(getMessengerConfig('telegram')).toMatchObject({
       label: 'Telegram',
       instanceType: 'telegram',

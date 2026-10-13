@@ -1,0 +1,36 @@
+{
+  "checkedAtUtc": "2026-10-13T12:44:27.793Z",
+  "source": "https://status.green-api.com/api/getMonitorList/aq1V2h2ZyW?page=1",
+  "monitors": [
+    {
+      "name": "Instances 4100",
+      "statusClass": "danger",
+      "currentDay": {
+        "date": "2026-10-13",
+        "ratio": "0.000",
+        "label": "poor",
+        "color": "red"
+      }
+    },
+    {
+      "name": "Instances 7105",
+      "statusClass": "success",
+      "currentDay": {
+        "date": "2026-10-13",
+        "ratio": "100.000",
+        "label": "excellent",
+        "color": "green"
+      }
+    },
+    {
+      "name": "Notifications 4100",
+      "statusClass": "danger",
+      "currentDay": {
+        "date": "2026-10-13",
+        "ratio": "0.000",
+        "label": "poor",
+        "color": "red"
+      }
+    }
+  ]
+}

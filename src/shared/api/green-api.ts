@@ -46,7 +46,7 @@ function abortError(): DOMException {
   return new DOMException('Запрос отменён.', 'AbortError');
 }
 
-/** Direct HTTPS client for MAX and Telegram. Credentials never appear in error messages. */
+/** Direct HTTPS client for Telegram. Credentials never appear in error messages. */
 export class GreenApi {
   readonly messenger: Messenger;
   private readonly profile: MessengerConfig;
@@ -55,9 +55,9 @@ export class GreenApi {
   private readonly timeoutMs: number;
 
   constructor(credentials: SessionCredentials, options: GreenApiOptions = {}) {
-    this.messenger = credentials.messenger ?? 'max';
-    if (this.messenger !== 'max' && this.messenger !== 'telegram') {
-      throw new ApiError('Выберите MAX или Telegram для подключения.', 'configuration');
+    this.messenger = credentials.messenger ?? 'telegram';
+    if (this.messenger !== 'telegram') {
+      throw new ApiError('Это приложение поддерживает только Telegram.', 'configuration');
     }
     this.profile = getMessengerConfig(this.messenger);
     let apiUrl: URL;
@@ -69,19 +69,18 @@ export class GreenApi {
     const officialHost = ['api.green-api.com', 'api.greenapi.com'].some(
       (host) => apiUrl.hostname === host || apiUrl.hostname.endsWith(`.${host}`),
     );
-    const allowedPaths = this.messenger === 'max' ? ['/', '/v3', '/v3/'] : ['/'];
     if (
       apiUrl.protocol !== 'https:' ||
       !officialHost ||
       (apiUrl.port && apiUrl.port !== '443') ||
-      !allowedPaths.includes(apiUrl.pathname) ||
+      apiUrl.pathname !== '/' ||
       apiUrl.username ||
       apiUrl.password ||
       apiUrl.search ||
       apiUrl.hash
     ) {
       throw new ApiError(
-        'Укажите HTTPS-адрес API из кабинета GREEN-API, например https://3100.api.green-api.com.',
+        'Укажите HTTPS-адрес API из кабинета GREEN-API, например https://4100.api.green-api.com.',
         'configuration',
       );
     }
@@ -269,9 +268,12 @@ export class GreenApi {
       if (signal?.aborted) throw abortError();
       if (error instanceof ApiError) throw error;
       if (timedOut)
-        throw new ApiError('GREEN-API не ответил вовремя. Повторяем подключение.', 'timeout');
+        throw new ApiError(
+          'Сервер GREEN-API не ответил вовремя. Проверьте состояние сервиса и повторите подключение.',
+          'timeout',
+        );
       throw new ApiError(
-        'Нет связи с GREEN-API. Проверьте интернет и адрес API из кабинета.',
+        'Не удалось связаться с сервером GREEN-API. Проверьте состояние сервиса, интернет и VPN.',
         'network',
       );
     } finally {
@@ -301,11 +303,7 @@ export class GreenApi {
       );
     }
     if (status >= 500)
-      return new ApiError(
-        'GREEN-API временно недоступен. Повторяем подключение.',
-        'server',
-        status,
-      );
+      return new ApiError('GREEN-API временно недоступен. Попробуйте позже.', 'server', status);
     if (status === 400)
       return new ApiError(
         'GREEN-API отклонил запрос. Проверьте введённые данные.',

@@ -9,7 +9,7 @@ const body = {
   messageData: { typeMessage: 'textMessage', textMessageData: { textMessage: 'Привет' } },
 };
 
-describe('MAX notification normalization', () => {
+describe('Telegram notification normalization', () => {
   it('parses incoming text and keeps the server chat ID and UNIX seconds', () => {
     expect(parseNotification(body)).toEqual({
       type: 'message',

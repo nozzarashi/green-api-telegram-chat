@@ -105,48 +105,22 @@
   font-weight: 650;
   letter-spacing: -0.2px;
 }
-.profileBadge {
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-subtle);
-  color: var(--color-muted);
-  font-size: 12px;
-  line-height: 16px;
-}
 .form {
   display: grid;
   gap: 20px;
 }
-.selectField {
-  display: grid;
-  gap: 8px;
-}
-.selectField label {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-}
-.selectField select {
-  width: 100%;
-  min-height: 48px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 15px;
-  line-height: 22px;
-  cursor: pointer;
-}
-.selectField select:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 3px;
-}
 .submit {
   width: 100%;
   margin-top: 4px;
+}
+.serviceStatusLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 4px;
+  color: inherit;
+  text-underline-offset: 3px;
 }
 .privacy {
   display: flex;

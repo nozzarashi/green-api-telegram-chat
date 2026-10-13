@@ -4,18 +4,18 @@ import { Button, Icon } from '@/shared/ui';
 import styles from './ConnectInstanceForm.module.css';
 
 export function ConnectionGuide({
-  messenger,
+  messenger = 'telegram',
   detailed = false,
 }: {
-  messenger: Messenger;
+  messenger?: Messenger;
   detailed?: boolean;
 }) {
   const profile = getMessengerConfig(messenger);
   return (
     <div className={styles.guideContent}>
       <p className={styles.guideIntro}>
-        GREEN-API соединяет этот чат с вашим {profile.label}. Данные подключения выдаются в его
-        кабинете.
+        GREEN-API соединяет этот чат с вашим {profile.label}. Данные подключения выдаются в кабинете
+        GREEN-API.
       </p>
       <ol className={styles.steps}>
         <li>
@@ -30,8 +30,7 @@ export function ConnectionGuide({
           <div>
             <strong>Создайте подключение {profile.label}</strong>
             <p>
-              Выберите бесплатный тариф Developer и подключите свой мессенджер по инструкции на
-              странице.
+              Выберите бесплатный тариф Developer и подключите Telegram по инструкции на странице.
             </p>
           </div>
         </li>
@@ -46,26 +45,13 @@ export function ConnectionGuide({
       {detailed && (
         <div className={styles.guideDetails}>
           <p>
-            В кабинете подключение называется «инстансом». После входа в свой мессенджер его
-            состояние должно быть «Авторизован».
+            В кабинете подключение называется «инстансом». После входа в Telegram его состояние
+            должно быть «Авторизован».
           </p>
           <p>
             Для проверки ответа напишите человеку, который согласен получить тестовое сообщение. Ему
             нужен только {profile.label}; аккаунт GREEN-API ему не требуется.
           </p>
-          {messenger === 'max' && (
-            <p>
-              Если MAX отсутствует в списке, можно{' '}
-              <a
-                href="https://console.green-api.com/instanceList/tariffs?messenger=v3"
-                target="_blank"
-                rel="noreferrer"
-              >
-                проверить прямую страницу тарифов
-              </a>{' '}
-              или выбрать Telegram в этом чате.
-            </p>
-          )}
         </div>
       )}
       <Button asChild variant="secondary" className={styles.consoleLink}>

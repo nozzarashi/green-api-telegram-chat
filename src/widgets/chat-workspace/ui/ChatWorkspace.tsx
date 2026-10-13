@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { MessageComposer } from '@/features/send-message';
 import { getMessengerConfig } from '@/shared/config';
 import { Button, EmptyState, Icon } from '@/shared/ui';
@@ -14,8 +13,10 @@ export function ChatWorkspace({
   activeChatId,
   connection,
   instanceId,
-  messenger = 'max',
+  messenger = 'telegram',
+  composerInputRef,
   onSelectChat,
+  onCloseChat,
   onNewChat,
   onLogout,
   onDraftChange,
@@ -23,21 +24,14 @@ export function ChatWorkspace({
   onRetry,
 }: ChatWorkspaceProps) {
   const messengerConfig = getMessengerConfig(messenger);
-  const [mobileListChatId, setMobileListChatId] = useState<string | null>(null);
   const activeChat = chats.find((chat) => chat.id === activeChatId);
   const hasPendingMessage =
     activeChat?.messages.some((message) => message.status === 'sending') ?? false;
-  const isMobileChatOpen = Boolean(activeChat && mobileListChatId !== activeChat.id);
-
-  function selectChat(chatId: string) {
-    setMobileListChatId(null);
-    onSelectChat(chatId);
-  }
 
   return (
     <section
       className={styles.workspace}
-      data-chat-open={isMobileChatOpen}
+      data-chat-open={Boolean(activeChat)}
       aria-label={`${messengerConfig.label} — сообщения`}
     >
       <ChatSidebar
@@ -46,7 +40,7 @@ export function ChatWorkspace({
         connection={connection}
         instanceId={instanceId}
         messengerLabel={messengerConfig.label}
-        onSelectChat={selectChat}
+        onSelectChat={onSelectChat}
         onNewChat={onNewChat}
         onLogout={onLogout}
       />
@@ -59,7 +53,7 @@ export function ChatWorkspace({
             <ChatHeader
               chat={activeChat}
               messengerLabel={messengerConfig.label}
-              onBack={() => setMobileListChatId(activeChat.id)}
+              onBack={onCloseChat}
             />
             {connection.status !== 'connected' && (
               <div
@@ -78,6 +72,7 @@ export function ChatWorkspace({
             />
             <MessageComposer
               key={activeChat.id}
+              inputRef={composerInputRef}
               value={activeChat.draft}
               onChange={(text) => onDraftChange(activeChat.id, text)}
               onSend={() => onSend(activeChat.id)}

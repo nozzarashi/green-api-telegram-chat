@@ -1,7 +1,7 @@
 import { useId, useLayoutEffect, useRef } from 'react';
-import type { FormEvent, KeyboardEvent } from 'react';
+import type { FormEvent, KeyboardEvent, RefObject } from 'react';
 import { Icon } from '@/shared/ui';
-import { MAX_MESSAGE_LENGTH } from '@/shared/config';
+import { TELEGRAM_MESSAGE_LENGTH } from '@/shared/config';
 import styles from './MessageComposer.module.css';
 
 export interface MessageComposerProps {
@@ -11,6 +11,7 @@ export interface MessageComposerProps {
   disabled?: boolean;
   isSending?: boolean;
   maxLength?: number;
+  inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 export function MessageComposer({
@@ -19,11 +20,13 @@ export function MessageComposer({
   onSend,
   disabled = false,
   isSending = false,
-  maxLength = MAX_MESSAGE_LENGTH,
+  maxLength = TELEGRAM_MESSAGE_LENGTH,
+  inputRef,
 }: MessageComposerProps) {
   const fieldId = useId();
   const hintId = useId();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fallbackRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = inputRef ?? fallbackRef;
   const canSend = !disabled && !isSending && value.trim().length > 0 && value.length <= maxLength;
   const showCharacterCount = value.length >= maxLength * 0.9;
 
@@ -33,7 +36,7 @@ export function MessageComposer({
 
     textarea.style.height = 'auto';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
-  }, [value]);
+  }, [value, textareaRef]);
 
   function sendMessage() {
     if (!canSend) return;

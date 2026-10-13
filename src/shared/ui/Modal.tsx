@@ -10,10 +10,13 @@ export function Modal({
   title,
   children,
   onClose,
+  getReturnFocus,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  /** Resolve after closing, when the next screen's refs have been attached. */
+  getReturnFocus?: () => HTMLElement | null;
 }) {
   const [returnFocusElement] = useState(() =>
     document.activeElement instanceof HTMLElement ? document.activeElement : null,
@@ -32,7 +35,8 @@ export function Modal({
           aria-describedby={undefined}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            returnFocusElement?.focus();
+            const target = getReturnFocus?.() ?? returnFocusElement;
+            target?.focus();
           }}
         >
           <div className={styles.dialogHeader}>

@@ -48,6 +48,44 @@ function pending(state: ConversationsState, chatId = '12345', id = 'local-1'): C
 }
 
 describe('conversation reducer concurrency', () => {
+  it('closes a conversation without losing its draft or message history', () => {
+    let state = event(withChat(), incoming());
+    state = conversationsReducer(state, { type: 'draft', chatId: '12345', text: 'Продолжу позже' });
+    const closed = conversationsReducer(state, { type: 'close' });
+    expect(closed.activeChatId).toBeNull();
+    expect(closed.chats).toBe(state.chats);
+    expect(closed.chats[0]).toMatchObject({
+      draft: 'Продолжу позже',
+      messages: [{ id: 'message-1', text: 'Привет' }],
+    });
+  });
+
+  it('counts new incoming messages after returning to the list and clears unread on reopening', () => {
+    const closed = conversationsReducer(withChat(), { type: 'close' });
+    const received = event(closed, incoming());
+    expect(received.activeChatId).toBeNull();
+    expect(received.chats[0]?.unreadCount).toBe(1);
+    const selected = conversationsReducer(received, { type: 'select', id: '12345' });
+    expect(selected.activeChatId).toBe('12345');
+    expect(selected.chats[0]?.unreadCount).toBe(0);
+    expect(selected.chats[0]?.messages).toEqual(received.chats[0]?.messages);
+  });
+
+  it('reopens the existing conversation from phone resolution and preserves its draft', () => {
+    let state = conversationsReducer(withChat(), {
+      type: 'draft',
+      chatId: '12345',
+      text: 'Черновик',
+    });
+    state = conversationsReducer(state, { type: 'close' });
+    state = event(state, incoming());
+    const reopened = withChat(state);
+    expect(reopened.activeChatId).toBe('12345');
+    expect(reopened.chats).toHaveLength(1);
+    expect(reopened.chats[0]).toMatchObject({ draft: 'Черновик', unreadCount: 0 });
+    expect(reopened.chats[0]?.messages).toEqual(state.chats[0]?.messages);
+  });
+
   it('deduplicates repeated incoming receipts and increments unread only once', () => {
     const before = withChat(withChat(), '67890');
     const once = event(before, incoming());

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '@/shared/api';
-import type { GreenApi, SessionCredentials } from '@/shared/api';
+import type { ApiErrorCode, GreenApi, SessionCredentials } from '@/shared/api';
 import { hasChatNotifications, inspectConnection } from './connection';
 import type { ConnectedSession } from './connection';
 
 export function useInstanceConnection(onConnect: (session: ConnectedSession) => void) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState<ApiErrorCode>();
   const [notice, setNotice] = useState('');
   const [setupApi, setSetupApi] = useState<GreenApi | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -16,6 +17,7 @@ export function useInstanceConnection(onConnect: (session: ConnectedSession) => 
   function clearFeedback() {
     setSetupApi(null);
     setError('');
+    setErrorCode(undefined);
     setNotice('');
   }
   function beginRequest() {
@@ -25,6 +27,7 @@ export function useInstanceConnection(onConnect: (session: ConnectedSession) => 
     pendingRef.current = true;
     setPending(true);
     setError('');
+    setErrorCode(undefined);
     setNotice('');
     return controller;
   }
@@ -32,6 +35,10 @@ export function useInstanceConnection(onConnect: (session: ConnectedSession) => 
     pendingRef.current = false;
     if (!controller.signal.aborted) setPending(false);
     controller.abort();
+  }
+  function reportFailure(cause: unknown, fallback: string) {
+    setError(cause instanceof ApiError ? cause.message : fallback);
+    setErrorCode(cause instanceof ApiError ? cause.code : undefined);
   }
   async function connect(credentials: SessionCredentials) {
     if (pendingRef.current) return;
@@ -50,13 +57,11 @@ export function useInstanceConnection(onConnect: (session: ConnectedSession) => 
       onConnect({
         api: result.api,
         instanceId: credentials.idInstance.trim(),
-        messenger: credentials.messenger ?? 'max',
+        messenger: credentials.messenger ?? 'telegram',
       });
     } catch (cause: unknown) {
       if (!controller.signal.aborted)
-        setError(
-          cause instanceof ApiError ? cause.message : 'Подключение не удалось. Попробуйте ещё раз.',
-        );
+        reportFailure(cause, 'Подключение не удалось. Попробуйте ещё раз.');
     } finally {
       finishRequest(controller);
     }
@@ -73,14 +78,21 @@ export function useInstanceConnection(onConnect: (session: ConnectedSession) => 
       );
     } catch (cause: unknown) {
       if (!controller.signal.aborted)
-        setError(
-          cause instanceof ApiError
-            ? cause.message
-            : 'Не удалось сохранить настройки. Попробуйте ещё раз.',
-        );
+        reportFailure(cause, 'Не удалось сохранить настройки. Попробуйте ещё раз.');
     } finally {
       finishRequest(controller);
     }
   }
-  return { pending, error, notice, needsSetup: Boolean(setupApi), clearFeedback, connect, prepare };
+  const serviceUnavailable =
+    errorCode === 'network' || errorCode === 'timeout' || errorCode === 'server';
+  return {
+    pending,
+    error,
+    notice,
+    serviceUnavailable,
+    needsSetup: Boolean(setupApi),
+    clearFeedback,
+    connect,
+    prepare,
+  };
 }

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, GreenApi } from './green-api';
 
 const credentials = {
-  apiUrl: 'https://3100.api.green-api.com/',
-  idInstance: '3100000000',
+  apiUrl: 'https://4100.api.green-api.com/',
+  idInstance: '4100000000',
   apiTokenInstance: 'private-test-token',
 };
 
@@ -13,8 +13,8 @@ function response(body: unknown, status = 200): Response {
 
 afterEach(() => vi.useRealTimers());
 
-describe('GREEN-API MAX client', () => {
-  it('resolves a phone number to the actual MAX chat ID with an integer payload', async () => {
+describe('GREEN-API Telegram client', () => {
+  it('resolves a phone number to the canonical Telegram chat ID with an integer payload', async () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValue(response({ exist: true, chatId: '12345' }));
@@ -24,22 +24,21 @@ describe('GREEN-API MAX client', () => {
       chatId: '12345',
     });
     expect(fetcher).toHaveBeenCalledWith(
-      'https://3100.api.green-api.com/waInstance3100000000/checkAccount/private-test-token',
+      'https://4100.api.green-api.com/waInstance4100000000/checkAccount/private-test-token',
       expect.objectContaining({ method: 'POST', body: '{"phoneNumber":79991234567}' }),
     );
   });
 
-  it('does not call the API for invalid or unsupported country numbers', async () => {
+  it('does not call the API for letters, short numbers or a leading zero', async () => {
     const fetcher = vi.fn<typeof fetch>();
     const api = new GreenApi(credentials, { fetch: fetcher });
-    await expect(api.checkAccount('12345678901')).rejects.toMatchObject({ code: 'validation' });
-    await expect(api.checkAccount('number 79991234567')).rejects.toMatchObject({
-      code: 'validation',
-    });
+    for (const phoneNumber of ['number 79991234567', '123456', '0447911123456']) {
+      await expect(api.checkAccount(phoneNumber)).rejects.toMatchObject({ code: 'validation' });
+    }
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it('reports a missing MAX account without inventing a telephone chat ID', async () => {
+  it('reports a missing Telegram account without inventing a telephone chat ID', async () => {
     const api = new GreenApi(credentials, {
       fetch: vi.fn<typeof fetch>().mockResolvedValue(response({ exist: false, chatId: '' })),
     });
@@ -68,9 +67,6 @@ describe('GREEN-API MAX client', () => {
     await expect(api.sendMessage('12345', ' '.repeat(20))).rejects.toMatchObject({
       code: 'validation',
     });
-    await expect(api.sendMessage('12345', 'a'.repeat(4001))).rejects.toMatchObject({
-      code: 'validation',
-    });
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
@@ -93,7 +89,7 @@ describe('GREEN-API MAX client', () => {
     const api = new GreenApi(credentials, { fetch: fetcher });
     await api.deleteNotification(17);
     expect(fetcher).toHaveBeenCalledWith(
-      'https://3100.api.green-api.com/waInstance3100000000/deleteNotification/private-test-token/17',
+      'https://4100.api.green-api.com/waInstance4100000000/deleteNotification/private-test-token/17',
       expect.objectContaining({ method: 'DELETE' }),
     );
     expect(fetcher.mock.calls[0]?.[1]).not.toHaveProperty('body');
@@ -137,9 +133,9 @@ describe('GREEN-API MAX client', () => {
     expect(() => new GreenApi({ ...credentials, apiUrl: 'http://localhost:5173' })).toThrow(
       ApiError,
     );
-    expect(
-      () => new GreenApi({ ...credentials, apiUrl: 'https://api.green-api.com/v3' }),
-    ).not.toThrow();
+    expect(() => new GreenApi({ ...credentials, apiUrl: 'https://api.green-api.com/v3' })).toThrow(
+      ApiError,
+    );
   });
 
   it('preserves caller cancellation as AbortError and cancels the actual fetch signal', async () => {
@@ -177,17 +173,7 @@ describe('GREEN-API MAX client', () => {
     await assertion;
     expect(vi.getTimerCount()).toBe(0);
   });
-});
-
-describe('GREEN-API Telegram client', () => {
-  const telegramCredentials = {
-    ...credentials,
-    apiUrl: 'https://4100.api.greenapi.com',
-    idInstance: '4100000000',
-    messenger: 'telegram' as const,
-  };
-
-  it('accepts the official hostname without a hyphen and reads the real Telegram instance type', async () => {
+  it('reads the Telegram instance type from the configured cluster without a version prefix', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       response({
         typeInstance: 'telegram',
@@ -199,14 +185,14 @@ describe('GREEN-API Telegram client', () => {
         stateWebhook: 'yes',
       }),
     );
-    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    const api = new GreenApi({ ...credentials, messenger: 'telegram' }, { fetch: fetcher });
     expect(api.messenger).toBe('telegram');
     await expect(api.getSettings()).resolves.toMatchObject({
       typeInstance: 'telegram',
       incomingWebhook: 'yes',
     });
     expect(fetcher).toHaveBeenCalledWith(
-      'https://4100.api.greenapi.com/waInstance4100000000/getSettings/private-test-token',
+      'https://4100.api.green-api.com/waInstance4100000000/getSettings/private-test-token',
       expect.objectContaining({ method: 'GET' }),
     );
   });
@@ -215,7 +201,7 @@ describe('GREEN-API Telegram client', () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValue(response({ exist: true, chatId: '123456789' }));
-    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    const api = new GreenApi(credentials, { fetch: fetcher });
     await expect(api.checkAccount('+44 7911 123456')).resolves.toEqual({
       exists: true,
       chatId: '123456789',
@@ -230,7 +216,7 @@ describe('GREEN-API Telegram client', () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValue(response({ exist: true, chatId: '123456789' }));
-    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    const api = new GreenApi(credentials, { fetch: fetcher });
     await api.checkAccount('+81 3 1234 5678');
     expect(fetcher).toHaveBeenCalledWith(
       expect.stringContaining('/checkAccount/'),
@@ -242,7 +228,7 @@ describe('GREEN-API Telegram client', () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValue(response({ idMessage: 'telegram-message' }));
-    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    const api = new GreenApi(credentials, { fetch: fetcher });
     await expect(api.sendMessage('12345', 'a'.repeat(4096))).resolves.toEqual({
       idMessage: 'telegram-message',
     });
@@ -254,24 +240,22 @@ describe('GREEN-API Telegram client', () => {
 
   it('does not loosen HTTPS and host validation for Telegram', () => {
     expect(
-      () => new GreenApi({ ...telegramCredentials, apiUrl: 'https://api.greenapi.com' }),
+      () => new GreenApi({ ...credentials, apiUrl: 'https://api.greenapi.com' }),
     ).not.toThrow();
     expect(
-      () =>
-        new GreenApi({ ...telegramCredentials, apiUrl: 'https://api.greenapi.com.attacker.test' }),
+      () => new GreenApi({ ...credentials, apiUrl: 'https://api.greenapi.com.attacker.test' }),
     ).toThrow(ApiError);
     expect(
-      () =>
-        new GreenApi({ ...telegramCredentials, apiUrl: 'https://attacker.test/api.greenapi.com' }),
+      () => new GreenApi({ ...credentials, apiUrl: 'https://attacker.test/api.greenapi.com' }),
+    ).toThrow(ApiError);
+    expect(() => new GreenApi({ ...credentials, apiUrl: 'http://4100.api.green-api.com' })).toThrow(
+      ApiError,
+    );
+    expect(
+      () => new GreenApi({ ...credentials, apiUrl: 'https://4100.api.green-api.com/v5' }),
     ).toThrow(ApiError);
     expect(
-      () => new GreenApi({ ...telegramCredentials, apiUrl: 'http://4100.api.greenapi.com' }),
-    ).toThrow(ApiError);
-    expect(
-      () => new GreenApi({ ...telegramCredentials, apiUrl: 'https://4100.api.greenapi.com/v5' }),
-    ).toThrow(ApiError);
-    expect(
-      () => new GreenApi({ ...telegramCredentials, apiUrl: 'https://4100.api.greenapi.com/v3' }),
+      () => new GreenApi({ ...credentials, apiUrl: 'https://4100.api.green-api.com/v3' }),
     ).toThrow(ApiError);
   });
 });

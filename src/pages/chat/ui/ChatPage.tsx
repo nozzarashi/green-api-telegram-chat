@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ConnectInstanceForm } from '@/features/connect-instance';
 import type { ConnectedSession } from '@/features/connect-instance';
 import { CreateChatForm } from '@/features/create-chat';
@@ -7,6 +7,7 @@ import { useChatController } from '../model/use-chat-controller';
 
 function ConnectedChat({ session, onLogout }: { session: ConnectedSession; onLogout: () => void }) {
   const [creatingChat, setCreatingChat] = useState(false);
+  const composerInputRef = useRef<HTMLTextAreaElement>(null);
   const controller = useChatController(session.api);
   return (
     <>
@@ -17,6 +18,8 @@ function ConnectedChat({ session, onLogout }: { session: ConnectedSession; onLog
         instanceId={session.instanceId}
         messenger={session.messenger}
         onSelectChat={controller.selectChat}
+        onCloseChat={controller.closeChat}
+        composerInputRef={composerInputRef}
         onNewChat={() => setCreatingChat(true)}
         onLogout={onLogout}
         onDraftChange={controller.changeDraft}
@@ -28,6 +31,7 @@ function ConnectedChat({ session, onLogout }: { session: ConnectedSession; onLog
           api={session.api}
           messenger={session.messenger}
           onClose={() => setCreatingChat(false)}
+          getSuccessFocus={() => composerInputRef.current}
           onCreate={(chat) => {
             controller.createChat(chat);
             setCreatingChat(false);

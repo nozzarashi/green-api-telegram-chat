@@ -32,6 +32,7 @@ export const initialConversationsState: ConversationsState = {
 export type ConversationAction =
   | { type: 'create'; chat: { id: string; name: string; phone: string } }
   | { type: 'select'; id: string }
+  | { type: 'close' }
   | { type: 'draft'; chatId: string; text: string }
   | { type: 'pending'; chatId: string; message: ConversationMessage; clearDraft: boolean }
   | { type: 'accepted'; chatId: string; temporaryId: string; id: string }
@@ -87,6 +88,8 @@ export function conversationsReducer(
             activeChatId: action.id,
           }
         : state;
+    case 'close':
+      return { ...state, activeChatId: null };
     case 'draft':
       return mapChat(state, action.chatId, (chat) => ({ ...chat, draft: action.text }));
     case 'pending':

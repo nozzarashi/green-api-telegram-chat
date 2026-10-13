@@ -1,5 +1,6 @@
 import type { Conversation, ConversationMessageStatus } from '@/entities/chat';
 import type { Messenger } from '@/shared/config';
+import type { RefObject } from 'react';
 
 export interface ChatWorkspaceProps {
   chats: Conversation[];
@@ -10,7 +11,9 @@ export interface ChatWorkspaceProps {
   };
   instanceId: string;
   messenger?: Messenger;
+  composerInputRef?: RefObject<HTMLTextAreaElement | null>;
   onSelectChat: (id: string) => void;
+  onCloseChat: () => void;
   onNewChat: () => void;
   onLogout: () => void;
   onDraftChange: (chatId: string, text: string) => void;
