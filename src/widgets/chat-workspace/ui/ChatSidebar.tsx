@@ -9,13 +9,14 @@ import styles from './ChatWorkspace.module.css';
 type ChatSidebarProps = Pick<
   ChatWorkspaceProps,
   'chats' | 'activeChatId' | 'connection' | 'instanceId' | 'onSelectChat' | 'onNewChat' | 'onLogout'
->;
+> & { messengerLabel: string };
 
 export function ChatSidebar({
   chats,
   activeChatId,
   connection,
   instanceId,
+  messengerLabel,
   onSelectChat,
   onNewChat,
   onLogout,
@@ -41,13 +42,14 @@ export function ChatSidebar({
     <aside className={styles.sidebar} aria-label="Список чатов">
       <header className={styles.sidebarHeader}>
         <div className={styles.brand}>
-          <span className={styles.brandMark} aria-hidden="true">
-            <Icon name="message" size={23} />
-          </span>
-          <div>
-            <span className={styles.brandName}>MAX</span>
-            <span className={styles.brandSubtitle}>Сообщения</span>
+          <div className={styles.sidebarTitleRow}>
+            <h2 className={styles.sidebarTitle}>Чаты</h2>
+            <span className={styles.brandName}>{messengerLabel}</span>
           </div>
+          <span className={styles.connectionLabel} data-status={connection.status}>
+            <span className={styles.connectionDot} aria-hidden="true" />
+            {connectionLabels[connection.status]}
+          </span>
         </div>
         <button
           className={styles.iconButton}
@@ -130,7 +132,7 @@ export function ChatSidebar({
             </span>
             <p>{query ? 'Чаты не найдены' : 'Пока нет чатов'}</p>
             <span>
-              {query ? 'Попробуйте другое имя или номер.' : 'Начните разговор — он появится здесь.'}
+              {query ? 'Попробуйте другое имя или номер.' : 'Создайте чат по номеру телефона.'}
             </span>
             {!query && (
               <Button variant="secondary" onClick={onNewChat}>
@@ -143,12 +145,9 @@ export function ChatSidebar({
 
       <footer className={styles.sidebarFooter}>
         <div className={styles.accountInfo}>
-          <span className={styles.connectionLabel} data-status={connection.status}>
-            <span className={styles.connectionDot} aria-hidden="true" />
-            {connectionLabels[connection.status]}
-          </span>
+          <span className={styles.accountLabel}>Аккаунт {messengerLabel}</span>
           <span className={styles.instanceLabel} title={`Аккаунт ${instanceId}`}>
-            Аккаунт {instanceId}
+            {instanceId}
           </span>
         </div>
         <button

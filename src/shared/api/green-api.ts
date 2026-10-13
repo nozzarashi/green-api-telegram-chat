@@ -7,7 +7,9 @@ import type {
   SendMessageResult,
   SessionCredentials,
 } from './types';
-import { MAX_MESSAGE_LENGTH } from '@/shared/config';
+import { getMessengerConfig } from '@/shared/config';
+import type { Messenger, MessengerConfig } from '@/shared/config';
+import { isValidPhoneNumber, normalizePhoneNumber } from '@/shared/lib';
 import { isInstanceState } from './types';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -44,26 +46,35 @@ function abortError(): DOMException {
   return new DOMException('Запрос отменён.', 'AbortError');
 }
 
-/** Direct HTTPS client. Credentials remain private and never appear in error messages. */
+/** Direct HTTPS client for MAX and Telegram. Credentials never appear in error messages. */
 export class GreenApi {
+  readonly messenger: Messenger;
+  private readonly profile: MessengerConfig;
   private readonly credentials: SessionCredentials;
   private readonly fetcher: typeof globalThis.fetch;
   private readonly timeoutMs: number;
 
   constructor(credentials: SessionCredentials, options: GreenApiOptions = {}) {
+    this.messenger = credentials.messenger ?? 'max';
+    if (this.messenger !== 'max' && this.messenger !== 'telegram') {
+      throw new ApiError('Выберите MAX или Telegram для подключения.', 'configuration');
+    }
+    this.profile = getMessengerConfig(this.messenger);
     let apiUrl: URL;
     try {
       apiUrl = new URL(credentials.apiUrl.trim());
     } catch {
       throw new ApiError('Укажите корректный адрес API из кабинета GREEN-API.', 'configuration');
     }
-    const officialHost =
-      apiUrl.hostname === 'api.green-api.com' || apiUrl.hostname.endsWith('.api.green-api.com');
+    const officialHost = ['api.green-api.com', 'api.greenapi.com'].some(
+      (host) => apiUrl.hostname === host || apiUrl.hostname.endsWith(`.${host}`),
+    );
+    const allowedPaths = this.messenger === 'max' ? ['/', '/v3', '/v3/'] : ['/'];
     if (
       apiUrl.protocol !== 'https:' ||
       !officialHost ||
       (apiUrl.port && apiUrl.port !== '443') ||
-      !['/', '/v3', '/v3/'].includes(apiUrl.pathname) ||
+      !allowedPaths.includes(apiUrl.pathname) ||
       apiUrl.username ||
       apiUrl.password ||
       apiUrl.search ||
@@ -81,6 +92,7 @@ export class GreenApi {
       apiUrl: apiUrl.href.replace(/\/+$/, ''),
       idInstance: credentials.idInstance.trim(),
       apiTokenInstance: credentials.apiTokenInstance.trim(),
+      messenger: this.messenger,
     };
     this.fetcher = options.fetch ?? globalThis.fetch.bind(globalThis);
     this.timeoutMs = options.requestTimeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -114,16 +126,13 @@ export class GreenApi {
   }
 
   async checkAccount(phoneNumber: string, signal?: AbortSignal): Promise<CheckAccountResult> {
-    if (!/^\+?[\d\s()-]+$/.test(phoneNumber)) {
-      throw new ApiError('Введите номер телефона в международном формате.', 'validation');
-    }
-    const digits = phoneNumber.replace(/\D/g, '');
-    if (!/^(?:7\d{10}|375\d{9})$/.test(digits)) {
+    if (!isValidPhoneNumber(phoneNumber, this.messenger)) {
       throw new ApiError(
-        'MAX поддерживает номера РФ (7, 11 цифр) и Беларуси (375, 12 цифр).',
+        `Введите корректный номер телефона. ${this.profile.phoneHint}.`,
         'validation',
       );
     }
+    const digits = normalizePhoneNumber(phoneNumber);
     const result = await this.request(
       'checkAccount',
       'POST',
@@ -157,8 +166,11 @@ export class GreenApi {
         'validation',
       );
     }
-    if (!message.trim() || message.length > MAX_MESSAGE_LENGTH) {
-      throw new ApiError('Сообщение должно содержать от 1 до 4000 символов.', 'validation');
+    if (!message.trim() || message.length > this.profile.maxMessageLength) {
+      throw new ApiError(
+        `Сообщение должно содержать от 1 до ${this.profile.maxMessageLength} символов.`,
+        'validation',
+      );
     }
     const result = await this.request('sendMessage', 'POST', { chatId, message }, signal);
     if (!isRecord(result) || typeof result.idMessage !== 'string' || !result.idMessage)
@@ -274,7 +286,7 @@ export class GreenApi {
       return new ApiError('Доступ отклонён. Проверьте ID инстанса и API-токен.', 'auth', status);
     }
     if (status === 403)
-      return new ApiError('На аккаунте MAX действуют ограничения.', 'account', status);
+      return new ApiError('На аккаунте мессенджера действуют ограничения.', 'account', status);
     if (status === 429 || status === 469)
       return new ApiError(
         'Достигнут лимит запросов. Подождите и повторите попытку.',

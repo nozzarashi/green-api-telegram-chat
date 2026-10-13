@@ -3,15 +3,19 @@ import type { FormEvent } from 'react';
 import { ApiError } from '@/shared/api';
 import type { GreenApi } from '@/shared/api';
 import { normalizePhoneNumber, formatPhoneNumber, isValidPhoneNumber } from '@/shared/lib';
+import { getMessengerConfig } from '@/shared/config';
+import type { Messenger } from '@/shared/config';
 import { Alert, Button, InputField, Modal } from '@/shared/ui';
 import styles from './CreateChatForm.module.css';
 
 export function CreateChatForm({
   api,
+  messenger = 'max',
   onCreate,
   onClose,
 }: {
   api: GreenApi;
+  messenger?: Messenger;
   onCreate: (chat: { id: string; phone: string; name: string }) => void;
   onClose: () => void;
 }) {
@@ -20,13 +24,18 @@ export function CreateChatForm({
   const [pending, setPending] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
   const pendingRef = useRef(false);
+  const profile = getMessengerConfig(messenger);
   useEffect(() => () => controllerRef.current?.abort(), []);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pendingRef.current) return;
     const normalized = normalizePhoneNumber(phone);
-    if (!isValidPhoneNumber(phone)) {
-      setError('Введите номер РФ (+7) или Беларуси (+375) в международном формате.');
+    if (!isValidPhoneNumber(phone, messenger)) {
+      setError(
+        messenger === 'max'
+          ? 'Введите номер РФ (+7) или Беларуси (+375) в международном формате.'
+          : 'Введите телефон с кодом страны, например +49 151 12345678.',
+      );
       return;
     }
     const controller = new AbortController();
@@ -38,7 +47,9 @@ export function CreateChatForm({
       const result = await api.checkAccount(normalized, controller.signal);
       if (controller.signal.aborted) return;
       if (!result.exists) {
-        setError('Аккаунт MAX не найден. Проверьте номер и доступность поиска по телефону.');
+        setError(
+          `Аккаунт ${profile.label} не найден. Проверьте номер и доступность поиска по телефону.`,
+        );
         return;
       }
       onCreate({ id: result.chatId, phone: normalized, name: formatPhoneNumber(normalized) });
@@ -58,13 +69,13 @@ export function CreateChatForm({
     <Modal title="Новый чат" onClose={onClose}>
       <form className={styles.form} onSubmit={(e) => void submit(e)}>
         <p className={styles.description}>
-          Введите номер человека, которому хотите написать в MAX.
+          Введите номер человека, которому хотите написать в {profile.label}.
         </p>
         <InputField
           label="Номер телефона"
           type="tel"
           placeholder="+7 999 123-45-67"
-          helperText="РФ (+7) или Беларусь (+375)"
+          helperText={profile.phoneHint}
           value={phone}
           autoComplete="tel"
           required

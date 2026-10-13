@@ -15,6 +15,7 @@ function ConnectedChat({ session, onLogout }: { session: ConnectedSession; onLog
         activeChatId={controller.state.activeChatId}
         connection={controller.connection}
         instanceId={session.instanceId}
+        messenger={session.messenger}
         onSelectChat={controller.selectChat}
         onNewChat={() => setCreatingChat(true)}
         onLogout={onLogout}
@@ -25,6 +26,7 @@ function ConnectedChat({ session, onLogout }: { session: ConnectedSession; onLog
       {creatingChat && (
         <CreateChatForm
           api={session.api}
+          messenger={session.messenger}
           onClose={() => setCreatingChat(false)}
           onCreate={(chat) => {
             controller.createChat(chat);

@@ -1,4 +1,5 @@
 import type { Conversation, ConversationMessageStatus } from '@/entities/chat';
+import type { Messenger } from '@/shared/config';
 
 export interface ChatWorkspaceProps {
   chats: Conversation[];
@@ -8,6 +9,7 @@ export interface ChatWorkspaceProps {
     message?: string;
   };
   instanceId: string;
+  messenger?: Messenger;
   onSelectChat: (id: string) => void;
   onNewChat: () => void;
   onLogout: () => void;

@@ -10,6 +10,7 @@ export interface MessageComposerProps {
   onSend: () => void;
   disabled?: boolean;
   isSending?: boolean;
+  maxLength?: number;
 }
 
 export function MessageComposer({
@@ -18,13 +19,13 @@ export function MessageComposer({
   onSend,
   disabled = false,
   isSending = false,
+  maxLength = MAX_MESSAGE_LENGTH,
 }: MessageComposerProps) {
   const fieldId = useId();
   const hintId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const canSend =
-    !disabled && !isSending && value.trim().length > 0 && value.length <= MAX_MESSAGE_LENGTH;
-  const showCharacterCount = value.length >= MAX_MESSAGE_LENGTH * 0.9;
+  const canSend = !disabled && !isSending && value.trim().length > 0 && value.length <= maxLength;
+  const showCharacterCount = value.length >= maxLength * 0.9;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -70,7 +71,7 @@ export function MessageComposer({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
-          maxLength={MAX_MESSAGE_LENGTH}
+          maxLength={maxLength}
           rows={1}
           placeholder="Напишите сообщение…"
           aria-describedby={hintId}
@@ -97,7 +98,7 @@ export function MessageComposer({
         </span>
         {showCharacterCount && (
           <span className={styles.characterCount} aria-live="polite">
-            {value.length} / {MAX_MESSAGE_LENGTH}
+            {value.length} / {maxLength}
           </span>
         )}
       </div>

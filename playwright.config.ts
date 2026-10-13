@@ -18,7 +18,12 @@ export default defineConfig({
       ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
       : {},
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 960 } },
+    },
+  ],
   webServer: {
     command: process.env.PLAYWRIGHT_WEB_SERVER_COMMAND || 'npm run dev -- --port 5173',
     url: baseURL,

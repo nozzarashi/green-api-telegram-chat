@@ -1,7 +1,10 @@
+import type { Messenger } from '@/shared/config';
+
 export interface SessionCredentials {
   apiUrl: string;
   idInstance: string;
   apiTokenInstance: string;
+  messenger?: Messenger;
 }
 
 const INSTANCE_STATES = [

@@ -8,11 +8,11 @@ export interface ChatConnection {
   message?: string;
 }
 const ACCOUNT_ERRORS: Record<Exclude<InstanceState, 'authorized'>, string> = {
-  notAuthorized: 'Инстанс отключён. Авторизуйте аккаунт MAX в кабинете GREEN-API.',
+  notAuthorized: 'Подключение отключено. Авторизуйте свой мессенджер в кабинете GREEN-API.',
   starting: 'Инстанс перезапускается. Дождитесь завершения запуска.',
-  blocked: 'Аккаунт MAX заблокирован. Проверьте его состояние в кабинете.',
-  suspended: 'На аккаунте MAX действуют ограничения отправки.',
-  pendingPassword: 'Завершите авторизацию MAX в кабинете GREEN-API: требуется пароль.',
+  blocked: 'Аккаунт заблокирован. Проверьте его состояние в кабинете.',
+  suspended: 'На аккаунте действуют ограничения отправки.',
+  pendingPassword: 'Завершите вход в мессенджер в кабинете GREEN-API: требуется пароль.',
 };
 export function useReceiveMessages(
   api: GreenApi,

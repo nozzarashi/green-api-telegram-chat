@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MessageComposer } from '@/features/send-message';
+import { getMessengerConfig } from '@/shared/config';
 import { Button, EmptyState, Icon } from '@/shared/ui';
 import { connectionLabels } from '../model/types';
 import type { ChatWorkspaceProps } from '../model/types';
@@ -13,6 +14,7 @@ export function ChatWorkspace({
   activeChatId,
   connection,
   instanceId,
+  messenger = 'max',
   onSelectChat,
   onNewChat,
   onLogout,
@@ -20,6 +22,7 @@ export function ChatWorkspace({
   onSend,
   onRetry,
 }: ChatWorkspaceProps) {
+  const messengerConfig = getMessengerConfig(messenger);
   const [mobileListChatId, setMobileListChatId] = useState<string | null>(null);
   const activeChat = chats.find((chat) => chat.id === activeChatId);
   const hasPendingMessage =
@@ -35,13 +38,14 @@ export function ChatWorkspace({
     <section
       className={styles.workspace}
       data-chat-open={isMobileChatOpen}
-      aria-label="MAX — сообщения"
+      aria-label={`${messengerConfig.label} — сообщения`}
     >
       <ChatSidebar
         chats={chats}
         activeChatId={activeChatId}
         connection={connection}
         instanceId={instanceId}
+        messengerLabel={messengerConfig.label}
         onSelectChat={selectChat}
         onNewChat={onNewChat}
         onLogout={onLogout}
@@ -52,7 +56,11 @@ export function ChatWorkspace({
       >
         {activeChat ? (
           <>
-            <ChatHeader chat={activeChat} onBack={() => setMobileListChatId(activeChat.id)} />
+            <ChatHeader
+              chat={activeChat}
+              messengerLabel={messengerConfig.label}
+              onBack={() => setMobileListChatId(activeChat.id)}
+            />
             {connection.status !== 'connected' && (
               <div
                 className={styles.connectionBanner}
@@ -75,13 +83,14 @@ export function ChatWorkspace({
               onSend={() => onSend(activeChat.id)}
               disabled={connection.status !== 'connected'}
               isSending={hasPendingMessage}
+              maxLength={messengerConfig.maxMessageLength}
             />
           </>
         ) : (
           <div className={styles.startScreen}>
             <EmptyState
-              title="Ваши сообщения в MAX"
-              description="Выберите чат слева или начните новый разговор по номеру телефона."
+              title="Начните разговор"
+              description="Выберите собеседника слева или создайте новый чат."
             >
               <Button onClick={onNewChat}>
                 <Icon name="plus" size={18} /> Новый чат

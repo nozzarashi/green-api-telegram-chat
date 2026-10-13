@@ -3,7 +3,15 @@ import type { Conversation } from '@/entities/chat';
 import { Avatar } from './Avatar';
 import styles from './ChatWorkspace.module.css';
 
-export function ChatHeader({ chat, onBack }: { chat: Conversation; onBack: () => void }) {
+export function ChatHeader({
+  chat,
+  messengerLabel,
+  onBack,
+}: {
+  chat: Conversation;
+  messengerLabel: string;
+  onBack: () => void;
+}) {
   return (
     <header className={styles.conversationHeader}>
       <button
@@ -18,10 +26,9 @@ export function ChatHeader({ chat, onBack }: { chat: Conversation; onBack: () =>
       <div className={styles.contactInfo}>
         <h1 className={styles.contactName}>{chat.name}</h1>
         <span className={styles.contactDetails}>
-          {chat.phone && chat.phone !== chat.name ? chat.phone : 'MAX'}
+          {chat.phone && chat.phone !== chat.name ? chat.phone : messengerLabel}
         </span>
       </div>
-      <span className={styles.headerPlatform}>MAX</span>
     </header>
   );
 }

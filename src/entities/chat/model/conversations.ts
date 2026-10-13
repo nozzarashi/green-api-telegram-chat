@@ -54,9 +54,10 @@ function statusKey(chatId: string, messageId: string): string {
   return `${chatId}:${messageId}`;
 }
 function deliveryError(status: DeliveryStatus): string {
-  if (status === 'noAccount') return 'Получатель не зарегистрирован в MAX.';
-  if (status === 'notInGroup') return 'Вы не участвуете в этой группе MAX.';
-  return 'MAX не доставил сообщение. Попробуйте ещё раз.';
+  if (status === 'noAccount')
+    return 'Получатель недоступен. Проверьте регистрацию и доступность поиска по телефону.';
+  if (status === 'notInGroup') return 'Вы не участвуете в этой группе.';
+  return 'Мессенджер не доставил сообщение. Попробуйте ещё раз.';
 }
 function mapChat(
   state: ConversationsState,
@@ -116,7 +117,7 @@ export function conversationsReducer(
           status === 'failed'
             ? pending
               ? deliveryError(pending.status)
-              : (echo?.error ?? 'MAX не доставил сообщение.')
+              : (echo?.error ?? 'Мессенджер не доставил сообщение.')
             : undefined;
         return {
           ...chat,
@@ -222,7 +223,7 @@ export function conversationsReducer(
           status === 'failed'
             ? pending
               ? deliveryError(pending.status)
-              : (existingMessage?.error ?? 'MAX не доставил сообщение.')
+              : (existingMessage?.error ?? 'Мессенджер не доставил сообщение.')
             : undefined,
       };
       const updated: Conversation = {

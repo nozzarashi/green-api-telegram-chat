@@ -14,9 +14,11 @@ interface MessageHistoryProps {
 
 export function MessageHistory({ chat, canRetry, onRetry }: MessageHistoryProps) {
   const listRef = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<HTMLDivElement>(null);
   const previousChatIdRef = useRef<string | null>(null);
   const stickToBottomRef = useRef(true);
   const lastMessageId = chat.messages.at(-1)?.id;
+  const hasMessages = chat.messages.length > 0;
 
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -28,6 +30,19 @@ export function MessageHistory({ chat, canRetry, onRetry }: MessageHistoryProps)
     }
     previousChatIdRef.current = chat.id;
   }, [chat.id, lastMessageId]);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    // Keep the bottom visible when text reflows or the composer changes height.
+    // A user reading older messages keeps their scroll position.
+    const observer = new ResizeObserver(() => {
+      if (stickToBottomRef.current) list.scrollTop = list.scrollHeight;
+    });
+    observer.observe(list);
+    if (itemsRef.current) observer.observe(itemsRef.current);
+    return () => observer.disconnect();
+  }, [chat.id, hasMessages]);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     const list = event.currentTarget;
@@ -51,10 +66,10 @@ export function MessageHistory({ chat, canRetry, onRetry }: MessageHistoryProps)
             <Icon name="message" size={30} />
           </span>
           <p>Начните разговор</p>
-          <span>Напишите первое сообщение {chat.name}.</span>
+          <span>История начнётся с вашего первого сообщения.</span>
         </div>
       ) : (
-        <div className={styles.messageItems}>
+        <div ref={itemsRef} className={styles.messageItems}>
           {chat.messages.map((message, index) => {
             const previousMessage = chat.messages[index - 1];
             const showDate =

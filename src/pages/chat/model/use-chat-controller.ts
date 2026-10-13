@@ -5,9 +5,10 @@ import type { ConversationMessage } from '@/entities/chat';
 import { useReceiveMessages } from '@/features/receive-messages';
 import { ApiError } from '@/shared/api';
 import type { GreenApi } from '@/shared/api';
-import { MAX_MESSAGE_LENGTH } from '@/shared/config';
+import { getMessengerConfig } from '@/shared/config';
 
 export function useChatController(api: GreenApi) {
+  const profile = getMessengerConfig(api.messenger);
   const [state, dispatch] = useReducer(conversationsReducer, initialConversationsState);
   const requestsRef = useRef(new Set<AbortController>());
   const sendingChatsRef = useRef(new Set<string>());
@@ -30,7 +31,7 @@ export function useChatController(api: GreenApi) {
     if (
       !chat ||
       !text.trim() ||
-      text.length > MAX_MESSAGE_LENGTH ||
+      text.length > profile.maxMessageLength ||
       sendingChatsRef.current.has(chatId) ||
       connection.status !== 'connected'
     )

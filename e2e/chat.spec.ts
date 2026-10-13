@@ -7,6 +7,29 @@ const TOKEN = 'test_token_not_a_real_secret';
 const CHAT_ID = '10000000';
 const PHONE = 79991234567;
 
+interface ConnectionProfile {
+  messenger: 'max' | 'telegram';
+  apiUrl: string;
+  idInstance: string;
+  token: string;
+  instanceType: string;
+}
+
+const MAX_PROFILE: ConnectionProfile = {
+  messenger: 'max',
+  apiUrl: API_URL,
+  idInstance: INSTANCE_ID,
+  token: TOKEN,
+  instanceType: 'v3',
+};
+const TELEGRAM_PROFILE: ConnectionProfile = {
+  messenger: 'telegram',
+  apiUrl: 'https://7105.api.greenapi.com',
+  idInstance: '7105000001',
+  token: 'telegram_test_token_not_a_real_secret',
+  instanceType: 'telegram',
+};
+
 interface Notification {
   receiptId: number;
   body: Record<string, unknown>;
@@ -20,6 +43,9 @@ interface ApiCall {
 }
 
 interface MockOptions {
+  apiUrl?: string;
+  idInstance?: string;
+  instanceType?: string;
   settings?: Record<string, unknown>;
   stateStatus?: number;
   state?: string;
@@ -75,6 +101,8 @@ function statusNotification(receiptId: number, idMessage: string, status: string
 }
 
 async function installApiMock(page: Page, options: MockOptions = {}) {
+  const apiUrl = options.apiUrl ?? API_URL;
+  const idInstance = options.idInstance ?? INSTANCE_ID;
   const calls: ApiCall[] = [];
   const queue: Notification[] = [];
   let sendFailures = options.sendFailures ?? 0;
@@ -84,7 +112,7 @@ async function installApiMock(page: Page, options: MockOptions = {}) {
   let receiveHeld = options.holdReceive ?? false;
   const waitingReceives: Array<() => void> = [];
   const settings = {
-    typeInstance: 'v3',
+    typeInstance: options.instanceType ?? 'v3',
     webhookUrl: '',
     incomingWebhook: 'yes',
     outgoingWebhook: 'yes',
@@ -102,7 +130,7 @@ async function installApiMock(page: Page, options: MockOptions = {}) {
     }
   };
 
-  await page.route(`${API_URL}/waInstance${INSTANCE_ID}/**`, async (route) => {
+  await page.route(`${apiUrl}/waInstance${idInstance}/**`, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const parts = url.pathname.split('/');
@@ -169,12 +197,18 @@ async function installApiMock(page: Page, options: MockOptions = {}) {
   };
 }
 
-async function connect(page: Page) {
+async function connect(page: Page, profile = MAX_PROFILE) {
   await page.goto('/');
-  await page.getByLabel('apiUrl', { exact: true }).fill(API_URL);
-  await page.getByLabel('idInstance', { exact: true }).fill(INSTANCE_ID);
-  await page.getByLabel('apiTokenInstance', { exact: true }).fill(TOKEN);
-  await page.getByRole('button', { name: 'Подключиться', exact: true }).click();
+  await page.getByLabel('Мессенджер', { exact: true }).selectOption(profile.messenger);
+  await page.getByLabel('Адрес API', { exact: true }).fill(profile.apiUrl);
+  await page.getByLabel('ID подключения', { exact: true }).fill(profile.idInstance);
+  await page.getByLabel('Ключ доступа', { exact: true }).fill(profile.token);
+  await page
+    .getByRole('button', {
+      name: profile.messenger === 'max' ? 'Подключить MAX' : 'Подключить Telegram',
+      exact: true,
+    })
+    .click();
 }
 
 async function createChat(page: Page, phone = '+7 (999) 123-45-67') {
@@ -294,7 +328,7 @@ test('rejects another messenger instance', async ({ page }) => {
   await installApiMock(page, { settings: { typeInstance: 'whatsapp' } });
   await connect(page);
   await expect(page.getByRole('alert')).toContainText(/MAX/i);
-  await expect(page.getByRole('button', { name: 'Подключиться', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Подключить MAX', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Выйти из аккаунта' })).toHaveCount(0);
 });
 
@@ -304,7 +338,9 @@ test('blocks connecting while an external webhook URL is configured', async ({ p
   });
   await connect(page);
   await expect(page.getByRole('alert')).toContainText(/приём сообщений через HTTP/i);
-  await expect(page.getByText(/Кнопка очистит Webhook URL/)).toBeVisible();
+  await expect(
+    page.getByText(/Настройка включит приём сообщений и очистит прежний Webhook URL/),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Настроить приём сообщений', exact: true }),
   ).toBeVisible();
@@ -317,7 +353,7 @@ test('rejects credentials without exposing the token or starting polling', async
   await expect(page.getByRole('alert')).toContainText(/доступ|токен|ID/i);
   await expect(page.getByRole('alert')).not.toContainText(TOKEN);
   expect(mock.receiveCount()).toBe(0);
-  await expect(page.getByLabel('apiTokenInstance', { exact: true })).toHaveAttribute(
+  await expect(page.getByLabel('Ключ доступа', { exact: true })).toHaveAttribute(
     'type',
     'password',
   );
@@ -345,7 +381,7 @@ test('changes instance notification settings only after the user presses the set
     });
   await expect(page.getByRole('status')).toContainText('Настройки сохранены');
   expect(mock.receiveCount()).toBe(0);
-  await page.getByRole('button', { name: 'Подключиться', exact: true }).click();
+  await page.getByRole('button', { name: 'Подключить MAX', exact: true }).click();
   await expect(page.getByText('Пока нет чатов', { exact: true })).toBeVisible();
 });
 
@@ -360,7 +396,7 @@ test('offers notification setup when incoming is enabled but status and account 
   await expect(
     page.getByRole('button', { name: 'Настроить приём сообщений', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Подключиться', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Подключить MAX', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Выйти из аккаунта', exact: true })).toHaveCount(0);
   expect(mock.receiveCount()).toBe(0);
   expect(mock.calls.filter((call) => call.method === 'setSettings')).toHaveLength(0);
@@ -393,7 +429,7 @@ test('keeps sending disabled after a notAuthorized state webhook and restores it
     },
   });
   await expect(page.getByLabel('Сообщение', { exact: true })).toBeDisabled();
-  await expect(page.getByRole('status')).toContainText('Инстанс отключён');
+  await expect(page.getByRole('status')).toContainText('Подключение отключено');
   await page.waitForTimeout(300);
   await expect(page.getByLabel('Сообщение', { exact: true })).toBeDisabled();
   mock.enqueue({
@@ -530,7 +566,7 @@ test('limits message text to 4000 characters and shows the character count', asy
 test('uses a mobile dialog and chat back navigation without horizontal overflow', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 375, height: 812 });
   await installApiMock(page);
   await connect(page);
   await page.getByRole('button', { name: 'Новый чат', exact: true }).first().click();
@@ -557,6 +593,15 @@ test('uses a mobile dialog and chat back navigation without horizontal overflow'
   await expect(page.getByLabel('Сообщение', { exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: /\+7 999 123-45-67/ }).click();
   await expect(page.getByLabel('Сообщение', { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 568 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1),
+  ).toBe(true);
+  await expect(page.getByLabel('Сообщение', { exact: true })).toBeVisible();
+  await page.screenshot({ path: 'screenshots/chat-mobile-320.png', fullPage: true });
 });
 
 test('logs out while a receive is in flight and ignores late session events', async ({ page }) => {
@@ -565,12 +610,156 @@ test('logs out while a receive is in flight and ignores late session events', as
   await expect.poll(mock.receiveCount).toBeGreaterThanOrEqual(1);
   const pendingAtLogout = mock.receiveCount();
   await page.getByRole('button', { name: 'Выйти из аккаунта', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Подключиться', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Подключить (MAX|Telegram)$/ })).toBeVisible();
   mock.enqueue(textNotification(501, 'late-1', 'Поздний ответ старой сессии'));
   mock.releaseReceive();
   await page.waitForTimeout(300);
   expect(mock.receiveCount()).toBe(pendingAtLogout);
   await expect(page.getByText('Поздний ответ старой сессии', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Выйти из аккаунта', exact: true })).toHaveCount(0);
-  await expect(page.getByLabel('apiTokenInstance', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Ключ доступа', { exact: true })).toHaveValue('');
+});
+
+test('opens the connection guide with a keyboard, traps focus and closes without changing credentials', async ({
+  page,
+}) => {
+  const mock = await installApiMock(page);
+  await page.goto('/');
+  const guideButton = page.getByRole('button', { name: 'Как получить данные', exact: true });
+  await expect(guideButton).toBeVisible();
+  await page.screenshot({ path: 'screenshots/login-desktop.png', fullPage: true });
+  await guideButton.focus();
+  await guideButton.press('Enter');
+  const guide = page.getByRole('dialog', { name: 'Как подключить Telegram', exact: true });
+  await expect(guide).toBeVisible();
+  await expect(guide).toContainText('GREEN-API');
+  for (let index = 0; index < 5; index += 1) {
+    await page.keyboard.press('Tab');
+    expect(await guide.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+  }
+  await page.screenshot({ path: 'screenshots/connection-guide-desktop.png', fullPage: false });
+  await page.keyboard.press('Escape');
+  await expect(guide).not.toBeVisible();
+  await expect(guideButton).toBeFocused();
+  await guideButton.press('Enter');
+  await expect(guide).toBeVisible();
+  await guide.getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await expect(guide).not.toBeVisible();
+  await expect(guideButton).toBeFocused();
+  await expect(page.getByLabel('Адрес API', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('ID подключения', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Ключ доступа', { exact: true })).toHaveValue('');
+  expect(mock.calls).toHaveLength(0);
+  for (const viewport of [
+    { width: 375, height: 812 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await expect(
+      page.getByRole('button', { name: 'Подключить Telegram', exact: true }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: `screenshots/login-mobile-${viewport.width}.png`,
+      fullPage: true,
+    });
+    await guideButton.click();
+    await expect(guide).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({
+      path: `screenshots/connection-guide-mobile-${viewport.width}.png`,
+      fullPage: false,
+    });
+    const guideBox = await guide.boundingBox();
+    expect(guideBox?.height).toBeLessThanOrEqual(viewport.height);
+    const instructionLink = guide.getByRole('link', {
+      name: 'Официальная инструкция',
+      exact: false,
+    });
+    await instructionLink.scrollIntoViewIfNeeded();
+    await expect(instructionLink).toBeInViewport();
+    await guide.getByRole('button', { name: 'Закрыть', exact: true }).click();
+    await expect(guide).not.toBeVisible();
+  }
+});
+
+test('uses the default Telegram profile, resolves an international number, sends 4096 characters and receives a reply', async ({
+  page,
+}) => {
+  const profile = TELEGRAM_PROFILE;
+  const phoneNumber = 4915112345678;
+  const mock = await installApiMock(page, {
+    apiUrl: profile.apiUrl,
+    idInstance: profile.idInstance,
+    instanceType: profile.instanceType,
+  });
+  await page.goto('/');
+  await expect(page.getByLabel('Мессенджер', { exact: true })).toHaveValue('telegram');
+  await connect(page, profile);
+  await createChat(page, '+49 151 1234 5678');
+  await expect
+    .poll(() => mock.calls.find((call) => call.method === 'checkAccount')?.body)
+    .toEqual({ phoneNumber });
+  const composer = page.getByLabel('Сообщение', { exact: true });
+  await expect(composer).toHaveAttribute('maxlength', '4096');
+  const message = 'Telegram '.padEnd(4096, 'я');
+  await composer.fill(message);
+  await composer.press('End');
+  await composer.press('x');
+  await expect(composer).toHaveValue(message);
+  await page.getByRole('button', { name: /^Отправить/ }).click();
+  await expect
+    .poll(() => mock.calls.find((call) => call.method === 'sendMessage')?.body)
+    .toEqual({ chatId: CHAT_ID, message });
+  await expect(composer).toHaveValue('');
+  const incoming = textNotification(601, 'telegram-incoming-1', 'Ответ из Telegram');
+  incoming.body.instanceData = {
+    idInstance: Number(profile.idInstance),
+    typeInstance: profile.instanceType,
+  };
+  incoming.body.senderData = {
+    chatId: CHAT_ID,
+    chatType: 'user',
+    sender: CHAT_ID,
+    senderName: 'Собеседник',
+    senderPhoneNumber: phoneNumber,
+  };
+  mock.enqueue(incoming);
+  await expect(page.getByRole('log').getByText('Ответ из Telegram', { exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      mock.calls.filter((call) => call.method === 'deleteNotification').map((call) => call.url),
+    )
+    .toContain(
+      `${profile.apiUrl}/waInstance${profile.idInstance}/deleteNotification/${profile.token}/601`,
+    );
+  expect(mock.calls.find((call) => call.method === 'deleteNotification')?.verb).toBe('DELETE');
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1),
+  ).toBe(true);
+  await page.screenshot({ path: 'screenshots/chat-telegram-desktop.png', fullPage: true });
+  for (const viewport of [
+    { width: 375, height: 812 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1),
+    ).toBe(true);
+    await expect(composer).toBeVisible();
+    await expect(
+      page.getByRole('log').getByText('Ответ из Telegram', { exact: true }),
+    ).toBeInViewport();
+    await page.screenshot({
+      path: `screenshots/chat-telegram-mobile-${viewport.width}.png`,
+      fullPage: true,
+    });
+  }
 });

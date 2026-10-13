@@ -1,1 +1,2 @@
-export const MAX_MESSAGE_LENGTH = 4000;
+export { MAX_MESSAGE_LENGTH, getMessengerConfig } from './messenger';
+export type { Messenger, MessengerConfig } from './messenger';

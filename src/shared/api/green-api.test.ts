@@ -178,3 +178,100 @@ describe('GREEN-API MAX client', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe('GREEN-API Telegram client', () => {
+  const telegramCredentials = {
+    ...credentials,
+    apiUrl: 'https://4100.api.greenapi.com',
+    idInstance: '4100000000',
+    messenger: 'telegram' as const,
+  };
+
+  it('accepts the official hostname without a hyphen and reads the real Telegram instance type', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      response({
+        typeInstance: 'telegram',
+        webhookUrl: '',
+        incomingWebhook: 'yes',
+        outgoingWebhook: 'yes',
+        outgoingAPIMessageWebhook: 'yes',
+        outgoingMessageWebhook: 'yes',
+        stateWebhook: 'yes',
+      }),
+    );
+    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    expect(api.messenger).toBe('telegram');
+    await expect(api.getSettings()).resolves.toMatchObject({
+      typeInstance: 'telegram',
+      incomingWebhook: 'yes',
+    });
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://4100.api.greenapi.com/waInstance4100000000/getSettings/private-test-token',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('resolves an international phone number using the canonical chat ID', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(response({ exist: true, chatId: '123456789' }));
+    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    await expect(api.checkAccount('+44 7911 123456')).resolves.toEqual({
+      exists: true,
+      chatId: '123456789',
+    });
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/checkAccount/'),
+      expect.objectContaining({ body: '{"phoneNumber":447911123456}' }),
+    );
+  });
+
+  it('preserves explicit international country codes beginning with 8', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(response({ exist: true, chatId: '123456789' }));
+    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    await api.checkAccount('+81 3 1234 5678');
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/checkAccount/'),
+      expect.objectContaining({ body: '{"phoneNumber":81312345678}' }),
+    );
+  });
+
+  it('allows exactly 4096 Telegram characters and rejects 4097 without a request', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(response({ idMessage: 'telegram-message' }));
+    const api = new GreenApi(telegramCredentials, { fetch: fetcher });
+    await expect(api.sendMessage('12345', 'a'.repeat(4096))).resolves.toEqual({
+      idMessage: 'telegram-message',
+    });
+    await expect(api.sendMessage('12345', 'a'.repeat(4097))).rejects.toMatchObject({
+      code: 'validation',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not loosen HTTPS and host validation for Telegram', () => {
+    expect(
+      () => new GreenApi({ ...telegramCredentials, apiUrl: 'https://api.greenapi.com' }),
+    ).not.toThrow();
+    expect(
+      () =>
+        new GreenApi({ ...telegramCredentials, apiUrl: 'https://api.greenapi.com.attacker.test' }),
+    ).toThrow(ApiError);
+    expect(
+      () =>
+        new GreenApi({ ...telegramCredentials, apiUrl: 'https://attacker.test/api.greenapi.com' }),
+    ).toThrow(ApiError);
+    expect(
+      () => new GreenApi({ ...telegramCredentials, apiUrl: 'http://4100.api.greenapi.com' }),
+    ).toThrow(ApiError);
+    expect(
+      () => new GreenApi({ ...telegramCredentials, apiUrl: 'https://4100.api.greenapi.com/v5' }),
+    ).toThrow(ApiError);
+    expect(
+      () => new GreenApi({ ...telegramCredentials, apiUrl: 'https://4100.api.greenapi.com/v3' }),
+    ).toThrow(ApiError);
+  });
+});

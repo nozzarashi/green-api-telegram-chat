@@ -158,7 +158,7 @@ describe('conversation reducer concurrency', () => {
     expect(state.chats.find((chat) => chat.id === '12345')?.messages[0]?.status).toBe('read');
     expect(state.chats.find((chat) => chat.id === '67890')?.messages[0]).toMatchObject({
       status: 'failed',
-      error: 'Получатель не зарегистрирован в MAX.',
+      error: 'Получатель недоступен. Проверьте регистрацию и доступность поиска по телефону.',
     });
     expect(state.pendingStatuses).toEqual({});
   });

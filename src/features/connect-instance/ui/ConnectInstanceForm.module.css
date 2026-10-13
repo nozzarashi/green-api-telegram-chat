@@ -2,139 +2,358 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: #f5f7fa;
-  padding: 0 24px;
+  background: var(--color-background);
+  padding: 0 32px;
 }
 .header {
-  width: 100%;
-  max-width: 1280px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 30px 12px;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 0;
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #191d27;
-  text-decoration: none;
-  font-size: 25px;
-  font-weight: 760;
-  letter-spacing: -0.5px;
+  gap: 16px;
 }
-.logo {
-  display: grid;
-  place-items: center;
-  width: 39px;
-  height: 39px;
-  border-radius: 14px;
-  background: linear-gradient(140deg, #16b9fa, #3474f5 45%, #894bdf);
-  color: white;
-  font-size: 26px;
-  font-weight: 850;
-}
-.helpLink {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 14px;
-  text-decoration: none;
-  color: #747988;
-}
-.card {
-  width: 100%;
-  max-width: 460px;
-  background: white;
-  border: 1px solid #eaedf2;
-  border-radius: 24px;
-  padding: 34px 36px 24px;
-  margin: auto 0;
-  box-shadow: 0 8px 38px #233f6610;
-}
-.cardLogo {
-  display: grid;
-  place-items: center;
-  width: 74px;
-  height: 74px;
-  border-radius: 25px;
-  margin: 0 auto 20px;
-  color: var(--color-accent);
-  background: #eef5ff;
-}
-.card h1 {
-  margin: 0;
-  font-size: 27px;
+.brandName {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
   letter-spacing: -0.8px;
-  line-height: 1.25;
-  text-align: center;
+}
+.brandDivider {
+  height: 20px;
+  width: 1px;
+  background: var(--color-border-strong);
+}
+.brandDescription {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-muted);
+}
+.headerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-decoration: none;
+  padding: 12px 0;
+}
+.headerLink:hover {
+  color: var(--color-text);
+}
+.content {
+  width: 100%;
+  max-width: 944px;
+  margin: auto;
+  padding: 40px 0;
 }
 .intro {
-  margin: 12px 0 26px;
+  margin: 0 0 32px;
+}
+.eyebrow {
+  margin: 0 0 8px;
   color: var(--color-muted);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.intro h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 40px;
+  letter-spacing: -1px;
+  text-wrap: balance;
+}
+.intro > p:last-child {
+  margin: 0;
   font-size: 15px;
-  text-align: center;
-  line-height: 1.5;
+  line-height: 24px;
+  color: var(--color-muted);
+}
+.panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 24px;
+  align-items: start;
+}
+.formPanel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  background: var(--color-surface);
+}
+.panelHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 24px;
+}
+.panelHeading h2,
+.guideHeading h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+}
+.profileBadge {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-subtle);
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 16px;
 }
 .form {
   display: grid;
-  gap: 17px;
+  gap: 20px;
+}
+.selectField {
+  display: grid;
+  gap: 8px;
+}
+.selectField label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.selectField select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  cursor: pointer;
+}
+.selectField select:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
 }
 .submit {
   width: 100%;
-  margin-top: 5px;
+  margin-top: 4px;
 }
 .privacy {
-  margin: 20px 0 0;
-  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-muted);
+  margin: 0;
+}
+.privacy svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.guidePanel {
+  padding: 28px;
+}
+.guideHeading {
+  margin-bottom: 24px;
+}
+.guideHeading > p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-muted);
+}
+.guideIntro {
+  margin: 0 0 24px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+.steps {
+  margin: 0 0 24px;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+  list-style: none;
+}
+.steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.stepNumber {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
   color: var(--color-muted);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
-.footer {
+.steps strong {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.steps p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 21px;
+  color: var(--color-muted);
+}
+.consoleLink {
+  width: 100%;
+}
+.guideButton {
+  width: 100%;
+  justify-content: flex-start;
+  margin-top: 12px;
+  color: var(--color-muted);
+}
+.guideDetails {
+  margin: 0 0 24px;
+  padding: 16px;
+  background: var(--color-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 22px;
+}
+.guideDetails p {
+  margin: 0;
+}
+.guideDetails p + p {
+  margin-top: 12px;
+}
+.docsLink {
   display: flex;
   align-items: center;
-  flex-direction: column;
-  gap: 10px;
-  text-align: center;
-  padding: 24px 0;
-  color: #737986;
-  font-size: 12px;
-}
-.footer a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  min-height: 44px;
+  font-size: 14px;
   text-decoration: none;
-  font-size: 13px;
 }
 .setup {
-  padding: 14px;
-  border-radius: 12px;
-  background: #f6f8fc;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle);
 }
 .setup p {
   margin: 0 0 12px;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 21px;
   color: var(--color-muted);
 }
-@media (max-width: 520px) {
+.setup button {
+  width: 100%;
+}
+.footer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+@media (max-width: 760px) {
+  .page {
+    padding: 0 20px;
+  }
+  .header {
+    padding: 20px 0;
+  }
+  .headerLink {
+    font-size: 12px;
+  }
+  .brand {
+    gap: 12px;
+  }
+  .brandDescription {
+    font-size: 12px;
+  }
+  .content {
+    padding: 24px 0;
+  }
+  .intro {
+    margin-bottom: 24px;
+  }
+  .intro h1 {
+    font-size: 28px;
+    line-height: 36px;
+  }
+  .intro > p:last-child {
+    font-size: 16px;
+  }
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .formPanel {
+    padding: 24px;
+  }
+  .guidePanel {
+    padding: 24px 4px;
+  }
+  .guideHeading > p,
+  .guideIntro,
+  .steps p {
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .steps strong {
+    font-size: 15px;
+  }
+  .selectField select {
+    font-size: 16px;
+  }
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 20px 0;
+  }
+}
+@media (max-width: 360px) {
   .page {
     padding: 0 16px;
   }
-  .header {
-    padding: 20px 4px;
+  .brandDescription {
+    display: none;
   }
-  .card {
-    padding: 26px 22px 22px;
-    border-radius: 20px;
+  .brandDivider {
+    display: none;
   }
-  .card h1 {
-    font-size: 25px;
+  .formPanel {
+    padding: 20px;
   }
-  .footer {
-    padding: 22px 0;
+  .intro h1 {
+    font-size: 26px;
+    line-height: 34px;
+  }
+  .panelHeading {
+    gap: 8px;
   }
 }
